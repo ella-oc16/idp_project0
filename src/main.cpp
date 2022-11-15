@@ -19,6 +19,11 @@ const int left_sensor_pin = 7;
 const int middle_sensor_pin = 9;
 const int right_sensor_pin = 11;
 
+const int ultrasonic_trigger_pin = 5;
+const int ultrasonic_echo_pin = 4;    
+
+int ultrasonic_trigger, ultrasonic_echo;
+
 int left_sensor_state;
 int middle_sensor_state;
 int right_sensor_state;
@@ -90,10 +95,40 @@ void read_sensors(int left_sensor, int middle_sensor, int right_sensor) {
     }
 }
 
+//Tunnel detection function checks if the tunnel is there and returns 1 if it is
+int tunnel_detection() {     //TODO add return value
+    double distance, duration;
+
+    //Send a pulse out of the trigger
+    digitalWrite(ultrasonic_trigger_pin, HIGH);
+    delay(10);
+    digitalWrite(ultrasonic_trigger_pin, LOW);
+
+    // measure duration of pulse from ECHO pin
+    duration = pulseIn(ultrasonic_echo_pin, HIGH);
+
+    // calculate the distance
+    distance= 0.017 * duration;
+
+    if (distance <20){
+        Serial.println("Tunnel detected");
+        return 1;
+    }
+
+    else {
+        return 0;
+    }
+}
+
 void setup() {
     Serial.begin(9600);
     Serial.println("Connected to serial port");
     Serial.println("Motor Shield found.");
+
+    // configure the trigger pin to output mode
+    pinMode(ultrasonic_trigger_pin, OUTPUT);
+    // configure the echo pin to input mode
+    pinMode(ultrasonic_echo_pin, INPUT);
 
     if (!AFMS.begin()) {    
         Serial.println("Could not find Motor Shield. Check wiring.");
@@ -115,6 +150,9 @@ void setup() {
 
 void loop() {
     uint8_t i;
+    int is_tunnel, after_tunnel, count;
+    is_tunnel = 0;
+    after_tunnel = 0;
 
     //Serial.println("start of loop");
 
@@ -124,6 +162,23 @@ void loop() {
     right_sensor_state = digitalRead(right_sensor_pin);
 
     read_sensors(left_sensor_state, middle_sensor_state, right_sensor_state);
+
+    if(after_tunnel ==0){     //Runs tunnel check if the tunnel hasn't passed
+
+        if (is_tunnel == 0){    
+            is_tunnel = tunnel_detection();
+        }
+    
+        while (is_tunnel == 1){     //while in the tunnel, it drives forward and chacks its still in the tunnel
+            count = 0;
+            if (count == 0){
+                drive_forward();    //uses function from main
+                count ++;
+            }
+            is_tunnel =tunnel_detection();
+        }
+     
+        after_tunnel = 1;    //after passing the tunnel, stop checking for the tunnel
 
     //Serial.println(left_sensor_state);
     //Serial.println(middle_sensor_state);
