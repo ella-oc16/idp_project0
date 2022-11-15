@@ -9,7 +9,7 @@ int ultrasonic_trigger, ultrasonic_echo;
 
 
 //Tunnel detection function checks if the tunnel is there and returns 1 if it is
-void tunnel_detection() {     //TODO add return value
+int tunnel_detection() {     //TODO add return value
     double distance, duration;
 
     //Send a pulse out of the trigger
@@ -25,6 +25,11 @@ void tunnel_detection() {     //TODO add return value
 
     if (distance <20){
         Serial.println("Tunnel detected");
+        return 1;
+    }
+
+    else {
+        return 0;
     }
 
 }
@@ -41,10 +46,31 @@ void setup(){
 
 
 void loop(){
-    Serial.println("loop");
-    tunnel_detection();
+    int is_tunnel, after_tunnel, count;
+    is_tunnel = 0;
+    after_tunnel = 0;
+
+    if(after_tunnel ==0){     //Runs tunnel check if the tunnel hasn't passed
+
+        if (is_tunnel == 0){    
+            is_tunnel = tunnel_detection();
+        }
     
-    delay(1000);
+        while (is_tunnel == 1){     //while in the tunnel, it drives forward and chacks its still in the tunnel
+            count = 0;
+            if (count == 0){
+                drive_forward();    //uses function from main
+                count ++;
+            }
+            is_tunnel =tunnel_detection();
+        }
+     
+        after_tunnel = 1;    //after passing the tunnel, stop checking for the tunnel
+
+    }
+
+    
+
 }
 
 
