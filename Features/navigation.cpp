@@ -19,10 +19,11 @@ const int led2 = 2;
 int left_sensor_state;
 int middle_sensor_state;
 int right_sensor_state;
-//int button_state;
+int button_state;
 int crossroad_counter = 0;
 int sharp_turn_counter = 0;
 
+// motor movement functions
 void stop() {
     leftMotor->run(RELEASE);
     rightMotor->run(RELEASE);
@@ -35,71 +36,121 @@ void forward() {
     leftMotor->setSpeed(220);
     rightMotor->setSpeed(220);
 }
+void right() {
+    leftMotor->run(FORWARD);
+    rightMotor->run(FORWARD);
+    leftMotor->setSpeed(0);
+    rightMotor->setSpeed(250);
+}
+void left() {
+    leftMotor->run(FORWARD);
+    rightMotor->run(FORWARD);
+    leftMotor->setSpeed(250);
+    rightMotor->setSpeed(0);
+}
 void sharp_right_turn() {
     leftMotor->run(BACKWARD);
     rightMotor->run(FORWARD);
     leftMotor->setSpeed(250);
     rightMotor->setSpeed(250);
+    delay(2000);
 }
 void sharp_left_turn() {
     leftMotor->run(FORWARD);
     rightMotor->run(BACKWARD);
     leftMotor->setSpeed(250);
     rightMotor->setSpeed(250);
+    delay(2000);
 }
-//NOTE - calibrate turns so robot turns 90 degree
+void one_eighty_turn() {
+    leftMotor->run(FORWARD);
+    rightMotor->run(BACKWARD);
+    leftMotor->setSpeed(250);
+    rightMotor->setSpeed(250);
+    //change delay depending on how long it takes for robot to turn around
+    delay(3000);
+}
+void drop_block(){
+    //code to drop block
+}
 
-//function for testing if sensors are reading correctly
+// switch statement for different maneuvers
+void maneuvers(char c) {
+    switch(c) {
+        case 'f':
+            Serial.println("Case f");
+            forward();
+            break;
+        case 's':
+            Serial.println("Case s");
+            stop();
+            break;
+        case 'r':
+            Serial.println("Case r");
+            sharp_right_turn();
+            break;
+        case 'l':
+            Serial.println("Case l");
+            sharp_left_turn();
+            break;
+        case 'd':
+            Serial.println("Case d");
+            //block dropping sequence: stop, drop and turn 180
+            stop();
+            drop_block();
+            one_eighty_turn();
+            break;
+        default:
+            Serial.println("Default");
+            forward();
+    }
+
+}
+
+//navigation sequences
+char crossroad_seq[] = "frfrfrfr";
+//frfdrfdrfdr
+char turn_seq[] = "fffrff";
+
+// navigation logic
 void navigation(int left_sensor, int middle_sensor, int right_sensor) {
-    
     if(middle_sensor == 1){
         if(left_sensor == 0 && right_sensor ==0){
-            Serial.println("Move forward");
+            //Serial.println("Move forward");
             forward();
         }
         else if(left_sensor == 1 && right_sensor == 0){
-            Serial.println("Sharp left - stop");
-            stop();
+            Serial.print("Sharp left, sharp turn counter: ");
+            Serial.println(sharp_turn_counter);
+            maneuvers(turn_seq[sharp_turn_counter]);
+            sharp_turn_counter++;
         }
         else if(left_sensor == 0 && right_sensor == 1){
-            Serial.println("Sharp right - stop");
-            stop();
+            Serial.print("Sharp right, sharp turn counter: ");
+            Serial.println(sharp_turn_counter);
+            maneuvers(turn_seq[sharp_turn_counter]);
+            sharp_turn_counter++;
         }
         else if(left_sensor == 1 && right_sensor == 1){
-            //Serial.println("At T-Junction - stop");
-            Serial.print("crossroad counter");
+            //manuever depends on where we are in sequence
+            //crossroad_seq[1] will give second manoever to be performed at crossroads
+            Serial.print("Crossroad, crossroad counter: ");
             Serial.println(crossroad_counter);
+            maneuvers(crossroad_seq[crossroad_counter]);
             crossroad_counter++;
-            stop();
         }
     }
     else {
         if(left_sensor == 1 && right_sensor == 0){
-            Serial.println("Left sensor detected line -> turn right");
-            leftMotor->run(BACKWARD);
-            rightMotor->run(FORWARD);
-            leftMotor->setSpeed(125);
-            rightMotor->setSpeed(255);
+            //Serial.println("Left sensor detected line -> turn right");
+            right();
         }
         else if(left_sensor == 0 && right_sensor == 1){
-            Serial.println("Right sensor detected line -> turn left");
-            leftMotor->run(FORWARD);
-            rightMotor->run(BACKWARD);
-            leftMotor->setSpeed(255);
-            rightMotor->setSpeed(125);
+            //Serial.println("Right sensor detected line -> turn left");
+            left();
         }
         else{
-            /*
-            if(counter>25){
-                Serial.println("has lost line");
-                leftMotor->run(RELEASE);
-                rightMotor->run(RELEASE);
-                leftMotor->setSpeed(0);
-                rightMotor->setSpeed(0);
-                return;
-            }
-            */
-            Serial.println("Nothing detected - Move forward");
+            // Nothing detected
             forward();
         }
     }
@@ -127,18 +178,14 @@ void setup() {
 
 void loop() {
 
-    //Serial.println("start of loop");
-
-    //button_state = digitalRead(button_sensor_pin);
+    button_state = digitalRead(button_sensor_pin);
     // if button is pressed, stop robot
-    /*
     if(button_state==1){
         Serial.println("Off button pressed, now exiting loop");
         leftMotor->run(RELEASE);
         rightMotor->run(RELEASE);
         exit(0);
     }
-    */
 
     // read the light sensor values
     left_sensor_state = digitalRead(left_sensor_pin);
@@ -150,8 +197,6 @@ void loop() {
     //Serial.println(right_sensor_state);
 
     navigation(left_sensor_state, middle_sensor_state, right_sensor_state);
-    //delay(100);
     
-    Serial.println("-----------------");
+    //Serial.println("-----------------");
 }
-
