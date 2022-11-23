@@ -61,14 +61,14 @@ void sharp_right_turn() {
     rightMotor->run(BACKWARD);
     leftMotor->setSpeed(250);
     rightMotor->setSpeed(250);
-    delay(1750);
+    delay(1500);
 }
 void sharp_left_turn() {
     leftMotor->run(BACKWARD);
     rightMotor->run(FORWARD);
     leftMotor->setSpeed(250);
     rightMotor->setSpeed(250);
-    delay(1750);
+    delay(1400);
 }
 void one_eighty_turn() {
     leftMotor->run(FORWARD);
@@ -99,7 +99,7 @@ void maneuvers(char c) {
         case 'f':
             Serial.println("CASE - Forward");
             forward();
-            delay(2500);
+            delay(1000);
             break;
         case 'r':
             Serial.println("CASE - Turn Right");
@@ -107,6 +107,8 @@ void maneuvers(char c) {
             break;
         case 'l':
             Serial.println("CASE - Turn Left");
+            forward();
+            delay(1000);
             sharp_left_turn();
             break;
         case 'c':
@@ -168,25 +170,26 @@ void navigation(int left_sensor_out, int left_sensor_in, int right_sensor_in, in
     else if(left_sensor_out == 1 && left_sensor_in == 1 && right_sensor_in == 0 && right_sensor_out == 0) { 
         Serial.print("Sharp left, node counter: ");
         Serial.println(node_counter);
-        forward();
-        delay(2000);
-        //maneuvers(nav_seq1[node_counter]);
+        //forward();
+        maneuvers(nav_seq1[node_counter]);
+        //delay(2000);
+        
         node_counter++;
     }
     else if(left_sensor_out == 0 && left_sensor_in == 0 && right_sensor_in == 1 && right_sensor_out == 1) {
         Serial.print("Sharp right, node counter: ");
         Serial.println(node_counter);
         forward();
-        delay(2000);
-        //maneuvers(nav_seq1[node_counter]);
+        maneuvers(nav_seq1[node_counter]);
+        //delay(2000);
         node_counter++;
     }
     else if(left_sensor_out == 1 && left_sensor_in == 1 && right_sensor_in == 1 && right_sensor_out == 1) {
         Serial.print("Crossroad, node counter: ");
         Serial.println(node_counter);
         forward();
-        delay(2000);
-        //maneuvers(nav_seq1[node_counter]);
+        maneuvers(nav_seq1[node_counter]);
+        //delay(2000);
         node_counter++;
     }
     else {
@@ -205,27 +208,31 @@ void setup() {
     }
     Serial.println("Motor Shield found.");
 
+    delay(3000);
+
+    /*
     leftMotor->setSpeed(150);
     leftMotor->run(FORWARD);
     rightMotor -> setSpeed(150);
     rightMotor -> run(FORWARD);
+    */
     leftMotor->run(RELEASE);
     rightMotor->run(RELEASE);
+    
 }
 
 void loop() {
 
     // ---- OFF BUTTON ----
-    /*
     button_state = digitalRead(button_sensor_pin);
     // if button is pressed, stop robot
-    if(button_state==1){
+    if(button_state==0){
         Serial.println("Off button pressed, now exiting loop");
         leftMotor->run(RELEASE);
         rightMotor->run(RELEASE);
         exit(0);
     }
-    */
+    
 
     // read the light sensor values
     left_sensor_state_out = digitalRead(left_sensor_pin_out);
