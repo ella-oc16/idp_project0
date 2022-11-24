@@ -22,23 +22,25 @@ const int led_yellow = 0;
 const int led_green = 1;
 const int led_orange = 2;
 
-const int left_sensor_pin_out = 3;
-const int left_sensor_pin_in = 4;
-const int right_sensor_pin_in = 5;
-const int right_sensor_pin_out = 6;
+const int left_sensor_pin_out = 6;
+const int left_sensor_pin_in = 5;
+const int right_sensor_pin_in = 3;
+const int right_sensor_pin_out = 4;
 
 const int left_pressure_switch = 8;
 const int right_pressure_sitch = 9;
 
-const int button_sensor_pin = 13;
+const int button_sensor_pin = 11;
 
-const int IR_sensor_pin = 1; //IR pin
+const int servo_pin = 12;
+const int IR_sensor_pin = A1;
 const int current_pin = A0;
 
 
 unsigned long current_millis;
 unsigned long previous_millis;
 const unsigned long interval = 250;
+unsigned long start_time, run_time;
 
 int led_yellow_state;
 
@@ -95,21 +97,21 @@ void sharp_right_turn() {
     rightMotor->run(BACKWARD);
     leftMotor->setSpeed(250);
     rightMotor->setSpeed(250);
-    delay(1500);
+    delay(1100);
 }
 void sharp_left_turn() {
     leftMotor->run(BACKWARD);
     rightMotor->run(FORWARD);
     leftMotor->setSpeed(250);
     rightMotor->setSpeed(250);
-    delay(1400);
+    delay(1100);
 }
 void one_eighty_turn() {
     leftMotor->run(FORWARD);
     rightMotor->run(BACKWARD);
     leftMotor->setSpeed(250);
     rightMotor->setSpeed(250);
-    delay(3000);
+    delay(2700);
 }
 void drop_block(){
     stop();
@@ -138,7 +140,7 @@ int block_checking(){
 
 }
 
-int block_type_check(){
+/*int block_type_check(){
     current_sum = 0;
     for (cycles=0; cycles <=15; cycles++){
         grab_servo.write(100);
@@ -156,7 +158,7 @@ int block_type_check(){
         return 1; //high density
     }
     delay(500);
-}
+}*/
 
 // switch statement for different maneuvers
 void maneuvers(char c) {
@@ -180,7 +182,7 @@ void maneuvers(char c) {
             //block checking on and go straight
             //block_checking = True;
             Serial.print("Forward, turn on block checking: ");
-            is_block = block_checking();
+            //is_block = block_checking();
             forward();
             delay(500);
             break;
@@ -200,10 +202,12 @@ void maneuvers(char c) {
             Serial.println("Park");
             park();
             break;
+        case 't':
+            one_eighty_turn();
         default:
             Serial.println("Default");
-            forward();
-            delay(2500);
+            digitalWrite(led_green, HIGH);
+            break;
     }
 
 }
@@ -215,7 +219,7 @@ void maneuvers(char c) {
 //sequence 3 - picked up red box block: offrdllp
 // the first o turns block checking off and goes straight at node
 
-char nav_seq[] = "lfc";
+char nav_seq[] = "lfftf";
 char nav_seq_green[] = "ordrrp";
 char nav_seq_red[] = "offrdllp";
 
@@ -272,11 +276,18 @@ void setup() {
     }
     Serial.println("Motor Shield found.");
 
-    grab_servo.attach(9); //What pin is servo on??? 
+    //grab_servo.attach(9); //What pin is servo on??? 
 
     pinMode(led_orange, OUTPUT);
     pinMode(led_green, OUTPUT);
     pinMode(led_yellow, OUTPUT);
+    pinMode(left_pressure_switch_state, INPUT);
+    pinMode(right_pressure_sitch, INPUT);
+    pinMode(right_sensor_pin_in, INPUT);
+    pinMode(right_sensor_pin_out, INPUT);
+    pinMode(left_sensor_pin_in, INPUT);
+    pinMode(left_sensor_pin_out, INPUT);
+    pinMode(button_sensor_pin, INPUT);
 
     //set nav sequence to at first be nav_seq1  -- Can't write nav_seq[]=nav_seq1
     //char nav_seq[] = "lfc";
@@ -284,16 +295,15 @@ void setup() {
     
     delay(3000);
 
-    /*
     leftMotor->setSpeed(150);
     leftMotor->run(FORWARD);
     rightMotor -> setSpeed(150);
     rightMotor -> run(FORWARD);
-    */
     leftMotor->run(RELEASE);
     rightMotor->run(RELEASE);
     
     previous_millis = millis();
+    start_time = millis();
 
     //Start by driving forwards for a bit
     forward();
@@ -306,7 +316,7 @@ void loop() {
     // ---- OFF BUTTON ----
     button_state = digitalRead(button_sensor_pin);
     // if button is pressed, stop robot
-    if(button_state==1){
+    if(button_state==0){
         Serial.println("Off button pressed, now exiting loop");
         leftMotor->run(RELEASE);
         rightMotor->run(RELEASE);
@@ -340,6 +350,21 @@ void loop() {
 
     navigation(left_sensor_state_out, left_sensor_state_in, right_sensor_state_in, right_sensor_state_out);
 
+    // ---- TIME CHECKS FOR WHEN NODES SHOULD HAVE HAPPENED ----
+    run_time = current_millis - start_time;
+    if (run_time > 3000 && node_counter == 0 ){
+        sharp_left_turn();
+        node_counter=1;
+        Serial.println("Auto turn");
+        //digitalWrite(led_orange, HIGH);
+    }
+    /*else if (run_time > 8000 && run_time < 15000 && node_counter ==1){
+        //node_counter++;
+        Serial.println("Auto node");
+        digitalWrite(led_orange, HIGH);
+    }*/
+
+
     // ---- PRESSURE SWITCHES FOR TUNNEL NAVIGATION ----
     left_pressure_switch_state = digitalRead(left_pressure_switch);
     right_pressure_switch_state = digitalRead(right_pressure_sitch);
@@ -350,16 +375,18 @@ void loop() {
         rightMotor->run(FORWARD);
         leftMotor->setSpeed(250);
         rightMotor->setSpeed(250);
-        delay(200);
+        delay(150);
     }
     else if (left_pressure_switch_state==1 && right_pressure_switch_state==0) {
+        Serial.println("left");
         leftMotor->run(FORWARD);
         rightMotor->run(BACKWARD);
         leftMotor->setSpeed(250);
         rightMotor->setSpeed(250);
-        delay(200);
+        delay(150);
     }
 
+    /*
     // ---- BLOCK DETERMINATION ----
     if (is_block == 1){
         block_type = block_type_check();
@@ -375,9 +402,18 @@ void loop() {
         //char nav_seq[]="offrdllp";
         delay(5000);
         digitalWrite(led_orange, LOW);
-    }
+    }*/
     
     Serial.println(node_counter);
+    Serial.print("1:");
+    Serial.println(right_sensor_state_out);
+    Serial.print("2:");
+    Serial.println(right_sensor_state_in);
+    Serial.print("3:");
+    Serial.println(left_sensor_state_in);
+    Serial.print("4:");
+    Serial.println(left_sensor_state_out);
     Serial.println("-----------------");
+    //delay(200);
 
 }
