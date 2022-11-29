@@ -75,8 +75,8 @@ void stop() {
 void forward() {
     leftMotor->run(FORWARD);
     rightMotor->run(FORWARD);
-    leftMotor->setSpeed(180);
-    rightMotor->setSpeed(180);
+    leftMotor->setSpeed(200);
+    rightMotor->setSpeed(200);
 }
 void backward() {
     leftMotor->run(BACKWARD);
@@ -87,14 +87,14 @@ void backward() {
 void right() {
     leftMotor->run(BACKWARD);
     rightMotor->run(FORWARD);
-    leftMotor->setSpeed(170);
+    leftMotor->setSpeed(0);
     rightMotor->setSpeed(255);
 }
 void left() {
     leftMotor->run(FORWARD);
     rightMotor->run(BACKWARD);
     leftMotor->setSpeed(255);
-    rightMotor->setSpeed(170);
+    rightMotor->setSpeed(0);
 }
 void sharp_right_turn() {
     leftMotor->run(FORWARD);
@@ -115,7 +115,7 @@ void one_eighty_turn() {
     rightMotor->run(BACKWARD);
     leftMotor->setSpeed(250);
     rightMotor->setSpeed(250);
-    delay(3100);
+    delay(2500);
 }
 
 void drop_block(){
@@ -124,11 +124,15 @@ void drop_block(){
     delay(500);
 }
 void park(){
-    leftMotor->run(FORWARD);
+    leftMotor->run(BACKWARD);
     rightMotor->run(FORWARD);
-    leftMotor->setSpeed(150);
-    rightMotor->setSpeed(150);
-    delay(1750);
+    leftMotor->setSpeed(250);
+    rightMotor->setSpeed(250);
+    delay(1250);
+    stop();
+    delay(1000);
+    forward();
+    delay(1800);
     stop();
     exit(0);
 }
@@ -142,7 +146,10 @@ void park(){
 // green box nav continues on from start of sequence
 // red box nav starts at character 9 (i.e. node counter = 9)
 
-char nav_seq[] = "flfcfdrrpffdllp";
+//char nav_seq[] = "flfcfdrrpffdllp";
+
+//over ramp
+char nav_seq[] = "frfcffdrrpffdp";
 
 // switch statement for different maneuvers
 bool maneuvers(char c) {
@@ -152,7 +159,7 @@ bool maneuvers(char c) {
         case 'f':
             Serial.println("CASE - Forward");
             forward();
-            delay(450);
+            delay(350);
             break;
         case 'r':
             Serial.println("CASE - Turn Right");
@@ -163,7 +170,7 @@ bool maneuvers(char c) {
         case 'l':
             Serial.println("CASE - Turn Left");
             forward();
-            delay(1500);
+            delay(1700);
             sharp_left_turn();
             break;
         case 'c':
@@ -178,17 +185,24 @@ bool maneuvers(char c) {
             delay(1500);
             sharp_right_turn();
             forward();
-            delay(2500);
+            delay(2200);
             drop_block();
+            delay(1000);
             backward();
-            delay(500);
+            delay(2600);
             stop();
-            delay(1000);
-            one_eighty_turn();
-            delay(1000);
+            leftMotor->run(FORWARD);
+            rightMotor->run(BACKWARD);
+            leftMotor->setSpeed(250);
+            rightMotor->setSpeed(250);
+            delay(1050);
+            stop();
+            delay(2000);
             break;
         case 'p':
             Serial.println("CASE - Park");
+            forward();
+            delay(1800);
             park();
             break;
         default:
@@ -272,21 +286,20 @@ int block_type_check(){
     }
     */
     
-    
     for (cycles=0; cycles <=2; cycles++){
-        grab_servo.write(180);
-        for (i=0; i<=220;i++){
+        grab_servo.write(20);
+        for (i=0; i<=1000;i++){
             current_sum += analogRead(current_pin);
         }
-        grab_servo.write(20);
-        delay(1000);
+        grab_servo.write(160);
+        delay(500);
     }
     Serial.println(current_sum);
     
 
     if (current_sum <= current_threshold) {
         Serial.println("Returning 0");
-        return 0;  //low density
+        return 1;  //low density
     } else {
         Serial.println("Returning 1");
         return 1; //high density
@@ -346,6 +359,7 @@ void loop() {
 
     // ---- OFF BUTTON ----
     button_state = digitalRead(button_sensor_pin);
+    //Serial.println(button_state);
     // if button is pressed, stop robot
     if(button_state==0){
         Serial.println("Off button pressed, now exiting loop");
@@ -372,7 +386,6 @@ void loop() {
     left_sensor_state_in = digitalRead(left_sensor_pin_in);
     right_sensor_state_in = digitalRead(right_sensor_pin_in);
     right_sensor_state_out = digitalRead(right_sensor_pin_out);
-    //navigation(left_sensor_state_out, left_sensor_state_in, right_sensor_state_in, right_sensor_state_out);
     
     //assign the boolean return given by nav function to 'block_checking'
     block_checking = navigation_short(left_sensor_state_out, left_sensor_state_in, right_sensor_state_in, right_sensor_state_out, block_checking);
@@ -399,8 +412,7 @@ void loop() {
 
     // ---- READING IR SENSOR WHEN BLOCK CHECKING IS TRUE ----
     if(block_checking==true){
-        //Serial.println("Checking for block...");
-        
+
         distance_to_block = (analogRead(IR_sensor_pin))/26;
         //Serial.print("Distance to block: ");
         //Serial.println(distance_to_block);
@@ -423,19 +435,16 @@ void loop() {
                 digitalWrite(led_orange, HIGH);
                 delay(4000);
                 digitalWrite(led_orange, LOW);
-                node_counter = 9;
+                node_counter = 10;
             }
 
             //turn off block checking so doesnt check same block again
             block_checking = false;
 
-            //hold onto block and turn around
-            grab_servo.write(20);
-            delay(400);
-            one_eighty_turn(); 
-            backward();
-            delay(300);
-            stop();
+            //hold onto block
+            grab_servo.write(160);
+            forward();
+            delay(1500);
         }
     }    
     
