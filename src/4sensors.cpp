@@ -170,6 +170,8 @@ void maneuvers(char c) {
             break;
         case 'r':
             Serial.println("CASE - Turn Right");
+            forward();
+            delay(1000);
             sharp_right_turn();
             break;
         case 'l':
@@ -199,6 +201,8 @@ void maneuvers(char c) {
             drop_block();
             break;
         case 'p':
+            forward();
+            delay(1000);
             Serial.println("Park");
             park();
             break;
@@ -219,7 +223,7 @@ void maneuvers(char c) {
 //sequence 3 - picked up red box block: offrdllp
 // the first o turns block checking off and goes straight at node
 
-char nav_seq[] = "lfftf";
+char nav_seq[] = "rfffffrp";
 char nav_seq_green[] = "ordrrp";
 char nav_seq_red[] = "offrdllp";
 
@@ -350,14 +354,14 @@ void loop() {
 
     navigation(left_sensor_state_out, left_sensor_state_in, right_sensor_state_in, right_sensor_state_out);
 
-    // ---- TIME CHECKS FOR WHEN NODES SHOULD HAVE HAPPENED ----
+    /*// ---- TIME CHECKS FOR WHEN NODES SHOULD HAVE HAPPENED ----
     run_time = current_millis - start_time;
     if (run_time > 3000 && node_counter == 0 ){
         sharp_left_turn();
         node_counter=1;
         Serial.println("Auto turn");
         //digitalWrite(led_orange, HIGH);
-    }
+    }*/
     /*else if (run_time > 8000 && run_time < 15000 && node_counter ==1){
         //node_counter++;
         Serial.println("Auto node");
@@ -403,6 +407,15 @@ void loop() {
         delay(5000);
         digitalWrite(led_orange, LOW);
     }*/
+
+    if (node_counter % 2 ==0){
+        digitalWrite(led_green, HIGH);
+        digitalWrite(led_orange, LOW);
+    }
+    else{
+        digitalWrite(led_green, LOW);
+        digitalWrite(led_orange, HIGH);
+    }
     
     Serial.println(node_counter);
     Serial.print("1:");
@@ -416,4 +429,5 @@ void loop() {
     Serial.println("-----------------");
     //delay(200);
 
+//delay(2000);
 }
