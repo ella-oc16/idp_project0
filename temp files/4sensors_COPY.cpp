@@ -50,7 +50,7 @@ int right_sensor_state_in;
 int right_sensor_state_out;
 int left_pressure_switch_state;
 int right_pressure_switch_state;
-int button_state;
+int button_state = 1;
 int node_counter = 0;
 int is_block;
 int block_type;
@@ -120,7 +120,7 @@ void one_eighty_turn() {
 
 void drop_block(){
     stop();
-    grab_servo.write(100);
+    grab_servo.write(20);
     delay(500);
 }
 void park(){
@@ -185,11 +185,11 @@ bool maneuvers(char c) {
             delay(1500);
             sharp_right_turn();
             forward();
-            delay(2200);
+            delay(2000);
             drop_block();
             delay(1000);
             backward();
-            delay(2600);
+            delay(2400);
             stop();
             leftMotor->run(FORWARD);
             rightMotor->run(BACKWARD);
@@ -197,7 +197,7 @@ bool maneuvers(char c) {
             rightMotor->setSpeed(250);
             delay(1050);
             stop();
-            delay(2000);
+            delay(500);
             break;
         case 'p':
             Serial.println("CASE - Park");
@@ -348,11 +348,26 @@ void setup() {
         digitalWrite(led_orange, LOW);
     }
 
+    //Initial position of grabber
+    grab_servo.write(20);
+
     leftMotor->run(RELEASE);
     rightMotor->run(RELEASE);
     
     previous_millis = millis();
     start_time = millis();
+
+    while (button_state == 1){
+        digitalWrite(led_orange, HIGH);
+        digitalWrite(led_yellow, HIGH);
+        digitalWrite(led_green, HIGH);
+        button_state = digitalRead(button_sensor_pin);
+    }
+    digitalWrite(led_orange, LOW);
+    digitalWrite(led_yellow, LOW);
+    digitalWrite(led_green, LOW);
+
+    delay(1000);
 }
 
 void loop() {
@@ -367,6 +382,7 @@ void loop() {
         rightMotor->run(RELEASE);
         exit(0);
     }
+
 
     // ---- LED BLINKING ---- 
     current_millis = millis();
@@ -390,7 +406,7 @@ void loop() {
     //assign the boolean return given by nav function to 'block_checking'
     block_checking = navigation_short(left_sensor_state_out, left_sensor_state_in, right_sensor_state_in, right_sensor_state_out, block_checking);
 
-    /*// ---- TIME CHECKS FOR WHEN NODES SHOULD HAVE HAPPENED ----
+    // ---- TIME CHECKS FOR WHEN NODES SHOULD HAVE HAPPENED ----
     run_time = current_millis - start_time;
     /*
     if (run_time > 3000 && node_counter == 0 ){
@@ -398,7 +414,7 @@ void loop() {
         node_counter=1;
         Serial.println("Auto turn");
         //digitalWrite(led_orange, HIGH);
-    }*/
+    }
     /*else if (run_time > 8000 && run_time < 15000 && node_counter ==1){
         //node_counter++;
         Serial.println("Auto node");
@@ -433,7 +449,7 @@ void loop() {
             else {
                 Serial.println("High density block");
                 digitalWrite(led_orange, HIGH);
-                delay(4000);
+                delay(6000);
                 digitalWrite(led_orange, LOW);
                 node_counter = 10;
             }
@@ -459,9 +475,6 @@ void loop() {
     Serial.print("4:");
     Serial.println(left_sensor_state_out);
     Serial.println("-----------------");
-    //delay(200);
-
-//delay(2000);
     delay(200);
     */
 }
