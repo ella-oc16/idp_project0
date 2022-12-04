@@ -377,14 +377,14 @@ void loop() {
                 //Low density
                 Serial.println("Low density block");
                 digitalWrite(led_green, HIGH);
-                delay(4000);
+                delay(6000);
                 digitalWrite(led_green, LOW);
             }
             else {
                 //High density
                 Serial.println("High density block");
                 digitalWrite(led_orange, HIGH);
-                delay(4000);
+                delay(6000);
                 digitalWrite(led_orange, LOW);
                 node_counter = 10;
             }
